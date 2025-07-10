@@ -1,30 +1,23 @@
-import { createTool } from "@mastra/core/tools";
-import { z } from "zod";
-import fetch from "node-fetch";
+import { Agent } from "@mastra/core/agent";
+import { cryptoNewsTool } from "./crypto-news-tool";
+import { model } from "../../config";
 
-export const getCryptoNews = createTool({
-  name: "getCryptoNews",
-  description: "Get the latest cryptocurrency news headlines and content summaries.",
-  inputSchema: z.object({
-    topic: z.string().describe("Optional topic to filter news, like Bitcoin, Ethereum, etc."),
-  }),
-  run: async ({ topic }) => {
-    const url = `https://cryptopanic.com/api/v1/posts/?auth_token=YOUR_API_KEY&public=true&currencies=${encodeURIComponent(topic || "")}`;
+const name = "Crypto News Agent";
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch news: ${res.statusText}`);
-    }
+const instructions = `
+You are a helpful crypto news summarizer agent.
 
-    const json = await res.json();
+Your job is to:
+- Provide concise summaries of the latest cryptocurrency news.
+- If the user gives you a specific topic (e.g. Ethereum, NFT, etc), focus on news about that.
+- If the user does not provide a topic, fetch general crypto news.
+- For each article, include the title, a short summary, and the link.
+- Keep summaries clean and readable, in bullet point format.
+`;
 
-    // Sadece başlık ve özet al
-    const articles = json.results.slice(0, 5).map((article: any) => ({
-      title: article.title,
-      url: article.url,
-      summary: article.slug,
-    }));
-
-    return { articles };
-  }
+export const cryptoNewsAgent = new Agent({
+  name,
+  instructions,
+  model,
+  tools: { cryptoNewsTool }
 });
