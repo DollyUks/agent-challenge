@@ -1,29 +1,18 @@
-import { Agent } from "@mastra/core/agent";
-import { model } from "../../config";
-import { yourTool } from "../your-agent/your-tool";
+import { createAgent } from "@mastra/core/agents";
+import { getCryptoNews } from "../tools/news";
 
-// Define Agent Name
-const name = "Your Agent";
+export default createAgent({
+  name: "CryptoNewsSummarizer",
+  description: "Fetches and summarizes the latest cryptocurrency news.",
+  tools: [getCryptoNews],
+  run: async (ctx) => {
+    const topic = ctx.input?.topic || "crypto";
+    const news = await ctx.callTool(getCryptoNews, { topic });
 
-// Define instructions for the agent
-// TODO: Add link here for recommendations on how to properly define instructions for an agent.
-// TODO: Remove comments (// ...) from `instructions`
-const instructions = `
-      // Define the character of the agent.
-      You are a helpful assistant that provides accurate information.
+    const summaries = news.articles.map((item) => {
+      return `📰 **${item.title}**\n🔗 ${item.url}\n📝 ${item.summary}\n`;
+    });
 
-      // Define how the agent should behave here.
-      Your primary function is to help users get accurate details for specific topics. When responding:
-      - If the location name isn’t in English, please translate it
-      - Keep responses concise but informative
-
-      // Define function that the agent needs to call
-      Use the yourTool to fetch current weather data.
-`;
-
-export const yourAgent = new Agent({
-	name,
-	instructions,
-	model,
-	tools: { yourTool },
+    return summaries.join("\n\n");
+  },
 });
